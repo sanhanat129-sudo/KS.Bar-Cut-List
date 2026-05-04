@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KS Bar-Cut List | Professional Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; }
+        
+        /* Rebar Texture */
+        .rebar-texture {
+            background-image: repeating-linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.2),
+                rgba(255, 255, 255, 0.2) 5px,
+                transparent 5px,
+                transparent 10px
+            );
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Print Settings */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; margin: 0; font-size: 10px; line-height: 1.3; }
+            .page-break { page-break-before: always; }
+            .print-container { margin: 0; width: 100%; max-width: none; box-shadow: none; border: none; padding: 6px !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .bottom-margin { margin-bottom: 0.3cm; }
+            
+            /* Print-specific styles */
+            h1, h2, h3 { margin: 2px 0 1px 0; padding: 0; line-height: 1.2; }
+            h1 { font-size: 16px; }
+            h2 { font-size: 13px; }
+            h3 { font-size: 11px; }
+            table { margin: 2px 0; font-size: 9px; border-collapse: collapse; }
+            th, td { padding: 2px 3px !important; }
+            thead { font-size: 9px; }
+            p { margin: 0; padding: 0; line-height: 1.3; }
+            .bg-white { padding: 3px !important; margin: 2px 0 !important; }
+            .rounded-xl { border-radius: 1px; }
+            .shadow { box-shadow: none; }
+            tr { page-break-inside: avoid; }
+        }
+        
+        input:focus, select:focus {
+            outline: 2px solid #24306e;
+            outline-offset: 1px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-md border-b-4 border-[#24306e] sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-center font-serif font-bold text-3xl tracking-widest border-2 border-slate-200 px-3 py-1 rounded">
+                    <span style="color:#24306e">K</span>
+                    <span style="color:#e21c23">S</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800 leading-tight">Bar-Cut List <span class="text-xs bg-red-600 text-white px-1 rounded ml-1 align-top">PRO</span></h1>
+                    <p class="text-xs text-slate-500">KS CONSTRUCTION KHONKAEN | Rebar Optimization Tool</p>
+                </div>
+            </div>
+            <div>
+                <button onclick="window.print()" class="bg-[#24306e] text-white px-4 py-2 rounded shadow hover:bg-slate-800 transition flex items-center gap-2">
+                    <i class="fa-solid fa-print"></i> <span class="hidden sm:inline">พิมพ์รายงาน</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 space-y-6 print-container">
+        
+        <div class="bg-white rounded-xl shadow p-6 border border-slate-200 no-print">
+            <div class="flex items-center gap-2 mb-6 border-b pb-2">
+                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-[#24306e]"><i class="fa-solid fa-plus"></i></div>
+                <h2 class="text-lg font-bold text-slate-700">เพิ่มรายการตัดเหล็ก</h2>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-12 gap-4 mb-6">
+                <div class="col-span-1 md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">ประเภท</label>
+                    <select id="steel-type" onchange="updateDiameters()" class="w-full border border-slate-300 rounded p-2 bg-slate-50">
+                        <option value="RB">RB (เหล็กกลม)</option>
+                        <option value="DB">DB (ข้ออ้อย)</option>
+                        <option value="WIRE">ลวด/ไวร์</option>
+                        <option value="SR">SR (เหล็กรูปพรรณ)</option>
+                        <option value="OTHER">อื่นๆ (กรอกเอง)</option>
+                    </select>
+                </div>
+                
+                <div class="col-span-1 md:col-span-2" id="custom-type-container" style="display:none;">
+                    <label class="block text-xs font-bold text-orange-600 mb-1">ระบุชนิด</label>
+                    <input type="text" id="custom-type" placeholder="เช่น H-Beam" maxlength="6" class="w-full border-2 border-orange-200 rounded p-2 bg-orange-50 font-bold uppercase">
+                </div>
+
+                <div class="col-span-1 md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">
+                        ขนาด
+                        <button type="button" onclick="openWeightModal()" class="font-bold text-blue-600 hover:text-blue-800 ml-1 cursor-pointer bg-blue-50 px-2 rounded-full text-[10px] border border-blue-200">
+                            <i class="fa-solid fa-gear"></i> ตั้งค่าน้ำหนัก
+                        </button>
+                    </label>
+                    <select id="diameter" onchange="checkCustomDiameter()" class="w-full border border-slate-300 rounded p-2 bg-slate-50">
+                        <option value="" selected disabled>เลือกขนาด</option>
+                    </select>
+                </div>
+
+                <div class="col-span-1 md:col-span-2" id="custom-dia-container" style="display:none;">
+                    <label class="block text-xs font-bold text-orange-600 mb-1">ขนาด (mm)</label>
+                    <input type="text" id="custom-dia" placeholder="เช่น 40" class="w-full border-2 border-orange-200 rounded p-2 bg-orange-50 font-bold">
+                </div>
+
+                <div class="col-span-1 md:col-span-2" id="custom-weight-container" style="display:none;">
+                    <label class="block text-xs font-bold text-orange-600 mb-1">น้ำหนัก (kg/m)</label>
+                    <input type="number" step="0.001" id="custom-weight" placeholder="0.000" class="w-full border-2 border-orange-200 rounded p-2 bg-orange-50 font-bold">
+                </div>
+                
+                <div class="col-span-1 md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">ความยาวเต็ม (ม.)</label>
+                    <input type="number" id="cut-length" value="10" class="w-full border border-slate-300 rounded p-2">
+                </div>
+                <div class="col-span-1 md:col-span-2">
+                    <label class="block text-xs font-bold text-blue-600 mb-1">ที่ต้องการ (ม.)</label>
+                    <input type="number" id="required-length" placeholder="0.00" class="w-full border-2 border-blue-200 rounded p-2 bg-blue-50 font-bold text-slate-800">
+                </div>
+                <div class="col-span-1 md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">จำนวน</label>
+                    <input type="number" id="quantity" value="1" min="1" class="w-full border border-slate-300 rounded p-2 text-center">
+                </div>
+                <div class="col-span-2 md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Note / ตำแหน่ง</label>
+                    <input type="text" id="notes" placeholder="เช่น เสา C1" class="w-full border border-slate-300 rounded p-2">
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="addItem()" class="flex-1 bg-[#24306e] text-white py-3 rounded shadow hover:bg-slate-800 transition font-bold">
+                    <i class="fa-solid fa-circle-plus"></i> เพิ่มรายการ
+                </button>
+                <button onclick="calculate()" id="calc-btn" disabled class="flex-1 bg-emerald-500 text-white py-3 rounded shadow hover:bg-emerald-600 transition font-bold disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-calculator"></i> คำนวณ
+                </button>
+                <button onclick="resetForm()" class="px-6 bg-slate-200 text-slate-600 rounded hover:bg-slate-300 font-bold">
+                    รีเซ็ต
+                </button>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-100">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-bold text-slate-500">รายการรอคำนวณ (<span id="temp-count" class="text-blue-600">0</span>)</h3>
+                    <button onclick="clearAll()" class="text-xs text-red-500 hover:underline">ลบทั้งหมด</button>
+                </div>
+                <div id="temp-list" class="bg-slate-50 rounded border border-dashed border-slate-300 p-4 min-h-[80px] text-center text-slate-400 text-sm">
+                    ยังไม่มีรายการ... กรุณาเพิ่มข้อมูลด้านบน
+                </div>
+            </div>
+        </div>
+
+        <div id="report-area" class="hidden space-y-2">
+            
+            <div class="bg-white rounded-xl shadow p-3 border border-slate-200">
+                <div class="flex justify-between items-start border-b pb-2 mb-2">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Bill of Materials</h2>
+                        <p class="text-xs text-slate-500">ใบสรุปรายการสั่งซื้อเหล็ก</p>
+                    </div>
+                    <div class="text-right text-sm">
+                        <div class="font-bold text-base"><span style="color:#24306e;">KS CONSTRUCTION</span> <span style="color:#e21c23;">KHONKAEN</span></div>
+                        <div class="text-xs text-slate-400">Date: <span id="print-date"></span></div>
+                    </div>
+                </div>
+                <table class="w-full text-xs">
+                    <thead class="bg-emerald-50 text-emerald-900">
+                        <tr>
+                            <th class="p-1 text-left text-xs">รายการ (Item)</th>
+                            <th class="p-1 text-center text-xs">ความยาวมาตรฐาน (ม.)</th>
+                            <th class="p-1 text-center text-xs">จำนวนที่ต้องสั่ง (เส้น)</th>
+                            <th class="p-1 text-center text-xs">น้ำหนักต่อเมตร <span class="text-[8px]">(kg/m)</span></th>
+                            <th class="p-1 text-right text-xs">น้ำหนักรวม (กก.)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="po-table-body" class="divide-y divide-slate-100">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="cutting-plan-container" class="space-y-1 bottom-margin">
+            </div>
+
+            <div class="bg-white rounded-xl shadow p-3 border border-slate-200 page-break">
+                <div class="flex items-center gap-1 mb-2 border-b pb-1">
+                    <div class="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xs"><i class="fa-solid fa-trash-can"></i></div>
+                    <h2 class="text-sm font-bold text-slate-700">สรุปเศษเหล็ก (Waste Report)</h2>
+                </div>
+                <table class="w-full text-xs">
+                    <thead class="bg-slate-100">
+                        <tr>
+                            <th class="p-1 text-left text-xs">Type</th>
+                            <th class="p-1 text-center text-xs">ID</th>
+                            <th class="p-1 text-center text-xs">เศษเหลือ (ม.)</th>
+                            <th class="p-1 text-center text-xs">น้ำหนัก (kg)</th>
+                            <th class="p-1 text-left text-xs">Note</th>
+                        </tr>
+                    </thead>
+                    <tbody id="waste-table-body" class="divide-y divide-slate-100 text-slate-600">
+                    </tbody>
+                    <tfoot class="bg-amber-50 border-t border-amber-300">
+                        <tr class="font-bold text-amber-900 text-xs">
+                            <td class="p-1" colspan="2">รวมทั้งหมด</td>
+                            <td class="p-1 text-center text-red-600" id="total-waste-meters">0.00</td>
+                            <td class="p-1 text-center text-orange-600" id="total-waste-kg">0.00</td>
+                            <td class="p-2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="text-center text-slate-400 text-xs py-1">
+                Report generated by KS CONSTRUCTION KHONKAEN | Bar-Cut List Tool
+            </div>
+        </div>
+    </main>
+
+    <div id="weight-modal" class="fixed inset-0 z-[100] hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-slate-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeWeightModal()"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="fa-solid fa-scale-balanced text-[#24306e]"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">ตั้งค่าน้ำหนักเหล็ก (kg/m)</h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500 mb-4">ค่าเริ่มต้นอ้างอิงตามมาตรฐาน มอก.</p>
+                                
+                                <div id="weight-table-container" class="border rounded-md overflow-hidden max-h-96 overflow-y-auto">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                    <button id="btn-save-weights" type="button" onclick="saveWeights()" class="hidden w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#24306e] text-base font-medium text-white hover:bg-slate-800 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                        บันทึก
+                    </button>
+                    <button id="btn-edit-weights" type="button" onclick="enableEditMode()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                        <i class="fa-solid fa-pen-to-square mr-2 pt-1"></i> แก้ไข
+                    </button>
+                    <button id="btn-reset-weights" type="button" onclick="resetWeights()" class="hidden w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        คืนค่าเดิม
+                    </button>
+                    <button type="button" onclick="closeWeightModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        ปิด
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA ---
+        // Default Standard Weights (เพิ่มประเภทเหล็กอื่นๆ)
+        const defaultSteelWeights = {
+            'RB': { '6': 0.222, '9': 0.499, '12': 0.888, '15': 1.387, '19': 2.226, '22': 2.984, '25': 3.853 },
+            'DB': { '10': 0.617, '12': 0.888, '16': 1.578, '20': 2.466, '25': 3.853, '28': 4.834, '32': 6.313 },
+            'WIRE': { '2.5': 0.039, '3': 0.056, '4': 0.099, '5': 0.154, '6': 0.222 },
+            'SR': { '24': 2.220, '25': 2.466, '28': 4.834, '32': 6.313, '36': 7.990, '40': 9.864 }
+        };
+        // Working Weights
+        let currentSteelWeights = JSON.parse(JSON.stringify(defaultSteelWeights));
+        
+        const steelSizes = {
+            'RB': ['6', '9', '12', '15', '19', '22', '25'],
+            'DB': ['10', '12', '16', '20', '25', '28', '32'],
+            'WIRE': ['2.5', '3', '4', '5', '6'],
+            'SR': ['24', '25', '28', '32', '36', '40']
+        };
+
+        const typeLabels = {
+            'RB': 'RB (เหล็กกลม)',
+            'DB': 'DB (ข้ออ้อย)',
+            'WIRE': 'ลวด/ไวร์',
+            'SR': 'SR (เหล็กรูปพรรณ)'
+        };
+
+        let items = [];
+        let isEditMode = false;
+        // เก็บประเภท + ขนาดที่ผู้ใช้กรอกเองเพื่อใช้ในการคำนวณ
+        let customTypes = {};
+
+        // --- Functions ---
+        
+        function updateDiameters() {
+            const typeSelect = document.getElementById('steel-type');
+            const diaDrop = document.getElementById('diameter');
+            const customTypeContainer = document.getElementById('custom-type-container');
+            const customDiaContainer = document.getElementById('custom-dia-container');
+            const customWeightContainer = document.getElementById('custom-weight-container');
+            if (!typeSelect || !diaDrop) return;
+            
+            const type = typeSelect.value;
+
+            if (type === 'OTHER') {
+                // โหมดกรอกเอง
+                customTypeContainer.style.display = '';
+                customDiaContainer.style.display = '';
+                customWeightContainer.style.display = '';
+                diaDrop.innerHTML = '<option value="CUSTOM" selected>กรอกเอง →</option>';
+                diaDrop.disabled = true;
+            } else {
+                customTypeContainer.style.display = 'none';
+                customDiaContainer.style.display = 'none';
+                customWeightContainer.style.display = 'none';
+                diaDrop.disabled = false;
+                diaDrop.innerHTML = '<option value="" selected disabled>เลือกขนาด</option>';
+                const sizes = steelSizes[type] || [];
+                sizes.forEach(size => {
+                    const opt = document.createElement('option');
+                    opt.value = size;
+                    opt.textContent = size + ' mm';
+                    diaDrop.appendChild(opt);
+                });
+                // เพิ่มตัวเลือก "ขนาดอื่นๆ"
+                const customOpt = document.createElement('option');
+                customOpt.value = 'CUSTOM_DIA';
+                customOpt.textContent = '+ ขนาดอื่นๆ';
+                customOpt.style.fontWeight = 'bold';
+                customOpt.style.color = '#ea580c';
+                diaDrop.appendChild(customOpt);
+            }
+        }
+
+        function checkCustomDiameter() {
+            const diaVal = document.getElementById('diameter').value;
+            const customDiaContainer = document.getElementById('custom-dia-container');
+            const customWeightContainer = document.getElementById('custom-weight-container');
+            
+            if (diaVal === 'CUSTOM_DIA') {
+                customDiaContainer.style.display = '';
+                customWeightContainer.style.display = '';
+            } else {
+                customDiaContainer.style.display = 'none';
+                customWeightContainer.style.display = 'none';
+            }
+        }
+
+        // --- MODAL LOGIC ---
+        function openWeightModal() {
+            document.getElementById('weight-modal').classList.remove('hidden');
+            renderWeightTable(false);
+        }
+
+        function closeWeightModal() {
+            document.getElementById('weight-modal').classList.add('hidden');
+            isEditMode = false;
+            updateModalButtons();
+        }
+
+        function enableEditMode() {
+            isEditMode = true;
+            renderWeightTable(true);
+            updateModalButtons();
+        }
+
+        function updateModalButtons() {
+            const btnEdit = document.getElementById('btn-edit-weights');
+            const btnSave = document.getElementById('btn-save-weights');
+            const btnReset = document.getElementById('btn-reset-weights');
+
+            if (isEditMode) {
+                btnEdit.classList.add('hidden');
+                btnSave.classList.remove('hidden');
+                btnReset.classList.remove('hidden');
+            } else {
+                btnEdit.classList.remove('hidden');
+                btnSave.classList.add('hidden');
+                btnReset.classList.add('hidden');
+            }
+        }
+
+        function renderWeightTable(editable) {
+            let html = `
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-slate-100 sticky top-0">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-xs font-bold text-gray-500 uppercase">ประเภท</th>
+                            <th class="px-3 py-2 text-left text-xs font-bold text-gray-500 uppercase">Size (mm)</th>
+                            <th class="px-3 py-2 text-right text-xs font-bold text-[#24306e]">น้ำหนัก (kg/m)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+            `;
+
+            const types = ['RB', 'DB', 'WIRE', 'SR'];
+            const typeColors = {
+                'RB': 'bg-blue-50',
+                'DB': 'bg-emerald-50',
+                'WIRE': 'bg-amber-50',
+                'SR': 'bg-purple-50'
+            };
+
+            types.forEach(type => {
+                const sizes = steelSizes[type];
+                sizes.forEach((size, i) => {
+                    const val = currentSteelWeights[type][size];
+                    const rowClass = i === 0 ? `${typeColors[type]} border-t-2 border-slate-300` : 'hover:bg-slate-50';
+                    html += `<tr class="${rowClass}">`;
+                    
+                    if (i === 0) {
+                        html += `<td class="px-3 py-2 font-bold text-slate-700" rowspan="${sizes.length}">${typeLabels[type]}</td>`;
+                    }
+                    
+                    html += `<td class="px-3 py-2 whitespace-nowrap font-medium text-gray-700">${size}</td>`;
+                    html += `<td class="px-3 py-2 whitespace-nowrap text-right">`;
+                    if (editable) {
+                        html += `<input type="number" step="0.001" id="w-${type}-${size}" value="${val}" class="w-24 border border-blue-300 rounded px-1 text-right focus:outline-none focus:ring-1 focus:ring-blue-500">`;
+                    } else {
+                        html += `<span class="text-gray-600">${val.toFixed(3)}</span>`;
+                    }
+                    html += `</td></tr>`;
+                });
+            });
+
+            html += `</tbody></table>`;
+            document.getElementById('weight-table-container').innerHTML = html;
+        }
+
+        function saveWeights() {
+            try {
+                const types = ['RB', 'DB', 'WIRE', 'SR'];
+                types.forEach(type => {
+                    steelSizes[type].forEach(size => {
+                        const el = document.getElementById(`w-${type}-${size}`);
+                        if (el) currentSteelWeights[type][size] = parseFloat(el.value) || 0;
+                    });
+                });
+                
+                isEditMode = false;
+                renderWeightTable(false);
+                updateModalButtons();
+                alert('บันทึกค่าน้ำหนักเรียบร้อยแล้ว');
+            } catch (e) {
+                alert('เกิดข้อผิดพลาดในการบันทึก');
+            }
+        }
+
+        function resetWeights() {
+            if(confirm('ต้องการคืนค่ามาตรฐาน (มอก.) ใช่หรือไม่?')) {
+                currentSteelWeights = JSON.parse(JSON.stringify(defaultSteelWeights));
+                renderWeightTable(true);
+            }
+        }
+
+        function formatNum(num) {
+            return parseFloat(num).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // --- APP LOGIC ---
+
+        function addItem() {
+            try {
+                let type = document.getElementById('steel-type').value;
+                let dia = document.getElementById('diameter').value;
+                const cutLen = parseFloat(document.getElementById('cut-length').value);
+                const reqLen = parseFloat(document.getElementById('required-length').value);
+                const qty = parseInt(document.getElementById('quantity').value);
+                const note = document.getElementById('notes').value || '-';
+
+                let customWeight = null;
+
+                // กรณีเลือก "อื่นๆ" - ผู้ใช้กรอกชนิดเอง
+                if (type === 'OTHER') {
+                    const customTypeVal = document.getElementById('custom-type').value.trim().toUpperCase();
+                    const customDiaVal = document.getElementById('custom-dia').value.trim();
+                    const customWeightVal = parseFloat(document.getElementById('custom-weight').value);
+
+                    if (!customTypeVal) { alert('กรุณาระบุชนิดเหล็ก'); return; }
+                    if (!customDiaVal) { alert('กรุณาระบุขนาด'); return; }
+                    if (!customWeightVal || customWeightVal <= 0) { alert('กรุณาระบุน้ำหนัก kg/m'); return; }
+                    
+                    type = customTypeVal;
+                    dia = customDiaVal;
+                    customWeight = customWeightVal;
+                }
+                // กรณีเลือก "ขนาดอื่นๆ" ในประเภทมาตรฐาน
+                else if (dia === 'CUSTOM_DIA') {
+                    const customDiaVal = document.getElementById('custom-dia').value.trim();
+                    const customWeightVal = parseFloat(document.getElementById('custom-weight').value);
+
+                    if (!customDiaVal) { alert('กรุณาระบุขนาด'); return; }
+                    if (!customWeightVal || customWeightVal <= 0) { alert('กรุณาระบุน้ำหนัก kg/m'); return; }
+                    
+                    dia = customDiaVal;
+                    customWeight = customWeightVal;
+                }
+
+                // เก็บค่าน้ำหนักที่กรอกเองใน customTypes
+                if (customWeight !== null) {
+                    if (!customTypes[type]) customTypes[type] = {};
+                    customTypes[type][dia] = customWeight;
+                }
+
+                // Validation
+                if (!dia) { alert('กรุณาเลือกขนาดเหล็ก'); return; }
+                if (!reqLen || reqLen <= 0 || isNaN(reqLen)) { alert('กรุณาระบุความยาวที่ต้องการ'); return; }
+                if (!cutLen || cutLen <= 0 || isNaN(cutLen)) { alert('กรุณาระบุความยาวเต็มเส้น'); return; }
+                
+                if (reqLen > cutLen) { alert('ความยาวที่ต้องการ ยาวกว่าเหล็กเต็มเส้น!'); return; }
+                if (!qty || qty < 1) { alert('จำนวนต้องมากกว่า 0'); return; }
+
+                // Add to array
+                items.push({
+                    id: Date.now(),
+                    type, dia, cutLen, reqLen, 
+                    actualReqLen: reqLen,
+                    qty, note
+                });
+
+                document.getElementById('required-length').value = '';
+                document.getElementById('notes').value = '';
+                document.getElementById('quantity').value = '1';
+                document.getElementById('required-length').focus();
+
+                renderTempList();
+
+            } catch (err) {
+                console.error(err);
+                alert("เกิดข้อผิดพลาด: " + err.message);
+            }
+        }
+
+        // ฟังก์ชั่นช่วยเพื่อดึงน้ำหนักเหล็ก รองรับทั้งประเภทมาตรฐานและกรอกเอง
+        function getUnitWeight(type, dia) {
+            if (currentSteelWeights[type] && currentSteelWeights[type][dia] !== undefined) {
+                return currentSteelWeights[type][dia];
+            }
+            if (customTypes[type] && customTypes[type][dia] !== undefined) {
+                return customTypes[type][dia];
+            }
+            return 0;
+        }
+
+        function renderTempList() {
+            const listEl = document.getElementById('temp-list');
+            const countEl = document.getElementById('temp-count');
+            const calcBtn = document.getElementById('calc-btn');
+
+            countEl.innerText = items.length;
+            calcBtn.disabled = items.length === 0;
+
+            if (items.length === 0) {
+                listEl.innerHTML = 'ยังไม่มีรายการ... กรุณาเพิ่มข้อมูลด้านบน';
+                return;
+            }
+
+            let html = '<div class="space-y-2">';
+            items.forEach((item, index) => {
+                html += `
+                    <div class="bg-white border border-slate-200 p-2 rounded flex justify-between items-center shadow-sm">
+                        <div class="flex gap-3 items-center text-left">
+                            <div class="bg-slate-100 px-2 py-1 rounded font-bold text-slate-700 text-sm w-20 text-center">
+                                ${item.type}${item.dia}
+                            </div>
+                            <div>
+                                <div class="text-sm font-bold text-slate-800">
+                                    ตัด <span class="text-blue-600">${formatNum(item.reqLen)}</span> ม. 
+                                    <span class="text-slate-400">x</span> ${item.qty} เส้น
+                                </div>
+                                <div class="text-xs text-slate-500">
+                                    จาก ${formatNum(item.cutLen)} ม. | ${item.note}
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="deleteItem(${index})" class="text-slate-300 hover:text-red-500 px-2">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            listEl.innerHTML = html;
+        }
+
+        function deleteItem(index) {
+            items.splice(index, 1);
+            renderTempList();
+        }
+
+        function clearAll() {
+            if(confirm('ยืนยันลบข้อมูลทั้งหมด?')) {
+                items = [];
+                renderTempList();
+                document.getElementById('report-area').classList.add('hidden');
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('required-length').value = '';
+            document.getElementById('notes').value = '';
+            document.getElementById('quantity').value = '1';
+        }
+
+        function calculate() {
+            if (items.length === 0) return;
+
+            const grouped = {};
+            items.forEach(item => {
+                const key = `${item.type}|${item.dia}|${item.cutLen}`;
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(item);
+            });
+
+            let poHtml = '';
+            let cuttingHtml = '';
+            let totalWasteMeters = 0;
+            let totalWasteKg = 0;
+            
+            // Collect waste data by type
+            let wasteByType = {};
+
+            Object.keys(grouped).forEach(key => {
+                const [type, dia, stdLenStr] = key.split('|');
+                const stdLen = parseFloat(stdLenStr);
+                const groupItems = grouped[key];
+
+                let pieces = [];
+                groupItems.forEach(i => {
+                    for (let n = 0; n < i.qty; n++) {
+                        pieces.push({ len: i.reqLen, note: i.note, actualLen: i.actualReqLen });
+                    }
+                });
+                pieces.sort((a, b) => b.len - a.len);
+
+                let bars = [];
+                pieces.forEach(piece => {
+                    let placed = false;
+                    const pieceLen = parseFloat(piece.actualLen);
+                    
+                    for (let bar of bars) {
+                        const currentUsed = parseFloat(bar.used);
+                        if (currentUsed + pieceLen <= stdLen + 0.00001) {
+                            bar.parts.push(piece);
+                            bar.used = currentUsed + pieceLen;
+                            bar.waste = stdLen - bar.used; 
+                            placed = true;
+                            break;
+                        }
+                    }
+                    if (!placed) {
+                        bars.push({
+                            parts: [piece],
+                            used: pieceLen,
+                            waste: stdLen - pieceLen
+                        });
+                    }
+                });
+
+                const totalBars = bars.length;
+                const unitWeight = getUnitWeight(type, dia);
+                const totalWeight = totalBars * unitWeight * stdLen;
+                
+                poHtml += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-1 font-bold text-slate-700">${type} - ${dia} mm</td>
+                        <td class="p-1 text-center">${formatNum(stdLen)}</td>
+                        <td class="p-1 text-center font-bold text-blue-600 bg-blue-50">${totalBars}</td>
+                        <td class="p-1 text-center">${formatNum(unitWeight)}</td>
+                        <td class="p-1 text-right font-mono">${formatNum(totalWeight)}</td>
+                    </tr>
+                `;
+
+                cuttingHtml += `<div class="bg-white rounded-xl shadow border border-slate-200 p-1 mb-1 break-inside-avoid">`;
+                cuttingHtml += `<div class="border-b pb-0.5 mb-0.5 flex justify-between font-bold text-slate-700 text-xs"><span>${type}-${dia}mm (Full: ${stdLen}m)</span> <span>Total: ${totalBars} Bars</span></div>`;
+                
+                const patterns = {};
+                bars.forEach((bar, idx) => {
+                    const pattern = bar.parts.map(p => p.len.toFixed(3)).join('|');
+                    if (!patterns[pattern]) {
+                        patterns[pattern] = { count: 0, bar: bar, firstIdx: idx };
+                    }
+                    patterns[pattern].count++;
+                });
+
+                let displayIdx = 0;
+                if (!wasteByType[type]) {
+                    wasteByType[type] = { dia: dia, items: [], totalMeters: 0, totalKg: 0 };
+                }
+
+                Object.keys(patterns).forEach(pattern => {
+                    const patInfo = patterns[pattern];
+                    const bar = patInfo.bar;
+                    displayIdx++;
+                    
+                    const noteStr = [...new Set(bar.parts.map(p => p.note))].join(', ');
+                    const wasteMeters = bar.waste;
+                    const wasteKg = wasteMeters * unitWeight;
+                    totalWasteMeters += wasteMeters;
+                    totalWasteKg += wasteKg;
+                    
+                    wasteByType[type].items.push({
+                        dia: dia,
+                        id: displayIdx,
+                        meters: wasteMeters,
+                        kg: wasteKg,
+                        note: noteStr,
+                        count: patInfo.count
+                    });
+                    wasteByType[type].totalMeters += wasteMeters;
+                    wasteByType[type].totalKg += wasteKg;
+
+                    cuttingHtml += `<div class="mb-0.5 text-xs">`;
+                    cuttingHtml += `<div class="flex justify-between items-start mb-0.5 text-xs"><div><span class="text-slate-700 font-bold text-xs">Bar #${displayIdx}${patInfo.count > 1 ? ` (${patInfo.count} sets)` : ''}</span>${noteStr ? `<div class="text-slate-500 text-xs">สำหรับ: ${noteStr}</div>` : ''}</div> <span class="text-red-500 font-bold text-xs">เศษ: ${formatNum(wasteMeters)}m</span></div>`;
+                    cuttingHtml += `<div class="flex w-full h-3 bg-slate-200 rounded overflow-hidden border border-slate-300">`;
+                    
+                    bar.parts.forEach((p, pid) => {
+                        const width = (p.len / stdLen) * 100;
+                        const bgColors = ['bg-slate-600', 'bg-slate-500', 'bg-slate-700', 'bg-slate-800'];
+                        const color = bgColors[pid % bgColors.length];
+                        cuttingHtml += `
+                            <div style="width:${width}%" class="${color} rebar-texture text-white flex items-center justify-center border-r border-white/20 whitespace-nowrap overflow-hidden px-0.5 text-xs" title="${p.len}m - ${type}${dia}mm (${p.note})">
+                                ${p.len}
+                            </div>
+                        `;
+                    });
+                    
+                    cuttingHtml += `</div></div>`;
+                });
+                cuttingHtml += `</div>`;
+            });
+
+            // Build waste HTML grouped by type, then by size
+            let wasteHtml = '';
+            
+            let wasteByTypeSized = {};
+            Object.keys(wasteByType).forEach(type => {
+                const typeData = wasteByType[type];
+                if (!wasteByTypeSized[type]) {
+                    wasteByTypeSized[type] = { totalMeters: 0, totalKg: 0, sizes: {} };
+                }
+                
+                typeData.items.forEach(item => {
+                    const sizeKey = `${type}${item.dia}`;
+                    if (!wasteByTypeSized[type].sizes[sizeKey]) {
+                        wasteByTypeSized[type].sizes[sizeKey] = { 
+                            dia: item.dia, 
+                            totalMeters: 0, 
+                            totalKg: 0, 
+                            items: [] 
+                        };
+                    }
+                    wasteByTypeSized[type].sizes[sizeKey].items.push(item);
+                    wasteByTypeSized[type].sizes[sizeKey].totalMeters += item.meters;
+                    wasteByTypeSized[type].sizes[sizeKey].totalKg += item.kg;
+                });
+                wasteByTypeSized[type].totalMeters = typeData.totalMeters;
+                wasteByTypeSized[type].totalKg = typeData.totalKg;
+            });
+
+            Object.keys(wasteByTypeSized).forEach(type => {
+                const typeData = wasteByTypeSized[type];
+                wasteHtml += `<tr class="bg-slate-300 font-bold text-slate-800"><td colspan="5" class="p-1">เหล็ก ${type}</td></tr>`;
+                
+                Object.keys(typeData.sizes).forEach(sizeKey => {
+                    const sizeData = typeData.sizes[sizeKey];
+                    wasteHtml += `
+                        <tr class="bg-slate-100">
+                            <td class="p-1 font-bold text-slate-700">${type} ${sizeData.dia}mm</td>
+                            <td class="p-1 text-center text-slate-500">-</td>
+                            <td class="p-1 text-center text-slate-500">-</td>
+                            <td class="p-1 text-center text-slate-500">-</td>
+                            <td class="p-1"></td>
+                        </tr>
+                    `;
+                    
+                    sizeData.items.forEach(item => {
+                        wasteHtml += `
+                            <tr class="hover:bg-slate-50 border-b border-slate-100">
+                                <td class="p-1 pl-4">${type}${item.dia}</td>
+                                <td class="p-1 text-center text-slate-400">#${item.id}</td>
+                                <td class="p-1 text-center font-bold text-red-500">${formatNum(item.meters)}</td>
+                                <td class="p-1 text-center font-bold text-orange-600">${formatNum(item.kg)}</td>
+                                <td class="p-1 text-xs text-slate-500 truncate max-w-[150px]">${item.note}${item.count > 1 ? ` (${item.count} sets)` : ''}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    wasteHtml += `
+                        <tr class="bg-green-100 border-b border-green-300 font-bold text-green-900">
+                            <td class="p-1 pl-4">รวม ${type}${sizeData.dia}</td>
+                            <td class="p-1 text-center">-</td>
+                            <td class="p-1 text-center">${formatNum(sizeData.totalMeters)}</td>
+                            <td class="p-1 text-center">${formatNum(sizeData.totalKg)}</td>
+                            <td class="p-1"></td>
+                        </tr>
+                    `;
+                });
+                
+                wasteHtml += `
+                    <tr class="bg-blue-200 border-b-2 border-blue-400 font-bold text-blue-900">
+                        <td class="p-1" colspan="2">รวมเหล็ก ${type}</td>
+                        <td class="p-1 text-center">${formatNum(typeData.totalMeters)}</td>
+                        <td class="p-1 text-center">${formatNum(typeData.totalKg)}</td>
+                        <td class="p-1"></td>
+                    </tr>
+                `;
+            });
+            
+            document.getElementById('po-table-body').innerHTML = poHtml;
+            document.getElementById('cutting-plan-container').innerHTML = cuttingHtml;
+            document.getElementById('waste-table-body').innerHTML = wasteHtml;
+            document.getElementById('total-waste-meters').innerText = formatNum(totalWasteMeters);
+            document.getElementById('total-waste-kg').innerText = formatNum(totalWasteKg);
+            document.getElementById('print-date').innerText = new Date().toLocaleDateString('th-TH');
+
+            document.getElementById('report-area').classList.remove('hidden');
+            document.getElementById('report-area').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', updateDiameters);
+        } else {
+            updateDiameters();
+        }
+        
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && document.activeElement.tagName === 'INPUT') {
+                addItem();
+            }
+        });
+
+    </script>
+</body>
+</html>
